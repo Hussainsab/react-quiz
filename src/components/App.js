@@ -8,6 +8,10 @@ import NextQuestion from "./NextQuestion";
 import { React, useReducer, useEffect } from "react";
 import Progress from "./Progress";
 import FinishScreen from "./FinishScreen";
+import Timer from "./Timer";
+import Footer from "./Footer";
+
+const SECS_PER_QUE = 30;
 const initialState = {
   questions: [],
 
@@ -17,6 +21,7 @@ const initialState = {
   answer: null,
   points: 0,
   highscore: 0,
+  secondsRemaining: 0,
 };
 
 function reducer(state, action) {
@@ -27,6 +32,7 @@ function reducer(state, action) {
       return {
         ...state,
         status: "active",
+        secondsRemaining: state.questions.length * SECS_PER_QUE,
       };
     case "newAnswer":
       const currentQuestion = state.questions[state.index];
@@ -56,14 +62,22 @@ function reducer(state, action) {
         status: "ready",
         highscore: state.highscore,
       };
+    case "tick":
+      return {
+        ...state,
+        secondsRemaining: state.secondsRemaining - 1,
+        status: state.secondsRemaining === 0 ? "finished" : state.status,
+      };
     default:
       return { ...state, status: "error" };
   }
 }
 
 function App() {
-  const [{ questions, status, index, answer, points, highscore }, dispatch] =
-    useReducer(reducer, initialState);
+  const [
+    { questions, status, index, answer, points, highscore, secondsRemaining },
+    dispatch,
+  ] = useReducer(reducer, initialState);
   const numQuestion = questions.length;
   const maxPossiblePoints = questions.reduce(
     (acc, curr) => acc + curr.points,
@@ -100,12 +114,15 @@ function App() {
               dispatch={dispatch}
               answer={answer}
             />
-            <NextQuestion
-              dispatch={dispatch}
-              answer={answer}
-              index={index}
-              numQuestion={numQuestion}
-            />
+            <Footer>
+              <Timer secondsRemaining={secondsRemaining} dispatch={dispatch} />
+              <NextQuestion
+                dispatch={dispatch}
+                answer={answer}
+                index={index}
+                numQuestion={numQuestion}
+              />
+            </Footer>
           </>
         )}
         {status === "finished" && (
